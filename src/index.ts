@@ -80,4 +80,4 @@ export class RateLimiter {
 	}
 }
 
-export type { RateLimitConfig, RateLimitResult };
+export type { RateLimitConfig, ExtendedRateLimitConfig, RateLimitResult };
