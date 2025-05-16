@@ -1,0 +1,46 @@
+{
+	"name": "@rabbit-company/rate-limiter",
+	"version": "1.0.0",
+	"description": "Simple rate limiter",
+	"main": "./module/rate-limiter.js",
+	"type": "module",
+	"homepage": "https://github.com/Rabbit-Company/RateLimiter-JS",
+	"funding": "https://rabbit-company.com/donation",
+	"author": "Rabbit Company <info@rabbit-company.com>",
+	"license": "MIT",
+	"private": false,
+	"scripts": {
+		"build": "bun run build.ts"
+	},
+	"files": [
+		"module/rate-limiter.js",
+		"module/rate-limiter.d.ts"
+	],
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Rabbit-Company/RateLimiter-JS.git"
+	},
+	"contributors": [
+		"Rabbit Company <info@rabbit-company.com> (https://github.com/Rabbit-Company)"
+	],
+	"bugs": {
+		"url": "https://github.com/Rabbit-Company/RateLimiter-JS/issues",
+		"email": "info@rabbit-company.com"
+	},
+	"keywords": [
+		"api",
+		"rate",
+		"limit",
+		"security"
+	],
+	"devDependencies": {
+		"@rabbit-company/logger": "5.3.0",
+		"@types/bun": "latest",
+		"bun-plugin-dts": "^0.3.0",
+		"hono": "^4.7.9"
+	},
+	"peerDependencies": {
+		"typescript": "^5.5.4"
+	},
+	"dependencies": {}
+}
