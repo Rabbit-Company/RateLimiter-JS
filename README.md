@@ -10,7 +10,8 @@ A simple yet powerful in-memory rate limiter for Node.js and browser environment
 
 - 🚦 Track request counts per endpoint and identifier (IP, user ID, etc.)
 - ⚙️ Configurable window duration and maximum request limits
-- 📊 Returns remaining requests and reset time information
+- 📊 Returns detailed rate limit information including current usage
+- 🧹 Automatic cleanup of expired entries
 - 🪶 Lightweight and dependency-free
 - 🛠️ Full TypeScript definitions included
 - 📡 Optional rate limit headers for API responses
@@ -35,9 +36,10 @@ import { RateLimiter } from "@rabbit-company/rate-limiter";
 
 // Create rate limiter
 const limiter = new RateLimiter({
-	windowMs: 15 * 60 * 1000, // 15 minutes
-	max: 100, // Limit each IP to 100 requests per window
-	cleanupIntervalMs: 30 * 1000, // Purge old rate limit entries every 30 seconds
+	window: 15 * 60 * 1000, // 15 minutes (default: 1 minute)
+	max: 100, // Limit each identifier to 100 requests per window (default: 60)
+	cleanupInterval: 60 * 1000, // Cleanup every minute (default: 30 seconds)
+	enableCleanup: true, // Enable automatic cleanup (default: true)
 });
 
 // Check a request
@@ -63,9 +65,10 @@ import type { Context } from "hono";
 const app = new Hono();
 
 const limiter = new RateLimiter({
-	windowMs: 15 * 60 * 1000, // 15 minutes
-	max: 100, // Limit each identifier to 100 requests per window
-	cleanupIntervalMs: 30 * 1000, // Purge old rate limit entries every 30 seconds
+	window: 15 * 60 * 1000, // 15 minutes (default: 1 minute)
+	max: 100, // Limit each identifier to 100 requests per window (default: 60)
+	cleanupInterval: 60 * 1000, // Cleanup every minute (default: 30 seconds)
+	enableCleanup: true, // Enable automatic cleanup (default: true)
 });
 
 app.use("*", async (c: Context, next) => {
@@ -75,7 +78,7 @@ app.use("*", async (c: Context, next) => {
 	const result = limiter.check(endpoint, ip);
 
 	// Set headers
-	c.header("X-RateLimit-Limit", limiter.config.max.toString());
+	c.header("X-RateLimit-Limit", result.limit.toString());
 	c.header("X-RateLimit-Remaining", result.remaining.toString());
 	c.header("X-RateLimit-Reset", Math.ceil(result.reset / 1000).toString());
 
@@ -98,6 +101,18 @@ app.get("/api/data", (c) => {
 });
 
 export default app;
+```
+
+## Manual Management 👷
+
+```js
+const limiter = new RateLimiter({ enableCleanup: false });
+
+// Manually clear all rate limit entries
+limiter.clear();
+
+// Get current number of tracked rate limit entries
+const activeLimits = limiter.getSize();
 ```
 
 ## Limitations ⚠️

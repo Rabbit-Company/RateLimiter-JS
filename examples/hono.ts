@@ -6,9 +6,10 @@ import type { Context } from "hono";
 const app = new Hono();
 
 const limiter = new RateLimiter({
-	windowMs: 15 * 60 * 1000, // 15 minutes
-	max: 100, // Limit each identifier to 100 requests per window
-	cleanupIntervalMs: 30 * 1000, // Purge old rate limit entries every 30 seconds
+	window: 15 * 60 * 1000, // 15 minutes (default: 1 minute)
+	max: 100, // Limit each identifier to 100 requests per window (default: 60)
+	cleanupInterval: 60 * 1000, // Cleanup every minute (default: 30 seconds)
+	enableCleanup: true, // Enable automatic cleanup (default: true)
 });
 
 app.use("*", async (c: Context, next) => {
@@ -18,7 +19,7 @@ app.use("*", async (c: Context, next) => {
 	const result = limiter.check(endpoint, ip);
 
 	// Set headers
-	c.header("X-RateLimit-Limit", limiter.config.max.toString());
+	c.header("X-RateLimit-Limit", result.limit.toString());
 	c.header("X-RateLimit-Remaining", result.remaining.toString());
 	c.header("X-RateLimit-Reset", Math.ceil(result.reset / 1000).toString());
 

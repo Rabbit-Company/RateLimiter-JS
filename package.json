@@ -1,6 +1,6 @@
 {
 	"name": "@rabbit-company/rate-limiter",
-	"version": "1.0.0",
+	"version": "2.0.0",
 	"description": "Simple rate limiter",
 	"main": "./module/rate-limiter.js",
 	"type": "module",

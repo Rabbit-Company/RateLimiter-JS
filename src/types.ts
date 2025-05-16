@@ -1,35 +1,58 @@
 /**
  * The result of a rate limit check.
  */
-export type RateLimitResult = {
+export interface RateLimitResult {
 	/**
 	 * Indicates whether the identifier has exceeded the rate limit.
 	 */
-	limited: boolean;
+	readonly limited: boolean;
 	/**
 	 * Number of remaining allowed requests within the current window.
 	 */
-	remaining: number;
+	readonly remaining: number;
 	/**
 	 * Timestamp (in milliseconds since epoch) when the rate limit window resets.
 	 */
-	reset: number;
-};
+	readonly reset: number;
+	/**
+	 * Current count of requests in the window.
+	 */
+	readonly current: number;
+	/**
+	 * Maximum allowed requests in the window.
+	 */
+	readonly limit: number;
+	/**
+	 * The rate limit window duration in milliseconds.
+	 */
+	readonly window: number;
+}
 
 /**
  * Configuration options for the rate limiter.
  */
-export type RateLimitConfig = {
+export interface RateLimitConfig {
 	/**
 	 * Duration of the rate limit window in milliseconds.
-	 * Example: 60_000 for 1 minute.
+	 * @default 60000 (1 minute)
 	 */
-	windowMs: number;
+	readonly window: number;
 	/**
 	 * Maximum number of requests allowed per window.
+	 * @default 60
 	 */
-	max: number;
-};
+	readonly max: number;
+	/**
+	 * Interval in milliseconds to purge old rate limit entries.
+	 * @default 30000 (30 seconds)
+	 */
+	readonly cleanupInterval?: number;
+	/**
+	 * Whether to enable the cleanup interval.
+	 * @default true
+	 */
+	readonly enableCleanup?: boolean;
+}
 
 /**
  * A unique key used to identify a specific rate limit bucket.
@@ -49,15 +72,4 @@ export interface Entry {
 	 * Timestamp (in milliseconds since epoch) when the current window resets.
 	 */
 	resetTime: number;
-}
-
-/**
- * Optional extended config to include cleanup interval.
- */
-export interface ExtendedRateLimitConfig extends RateLimitConfig {
-	/**
-	 * Interval in milliseconds to purge old rate limit entries.
-	 * Defaults to 30_000ms (30 seconds)
-	 */
-	cleanupIntervalMs?: number;
 }

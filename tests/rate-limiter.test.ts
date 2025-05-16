@@ -6,9 +6,10 @@ describe("RateLimiter", () => {
 
 	beforeEach(() => {
 		limiter = new RateLimiter({
-			windowMs: 1000, // 1 second window for testing
+			enableCleanup: true, // cleanup enabled by default
+			window: 1000, // 1 second window for testing
 			max: 2, // allow 2 requests per window
-			cleanupIntervalMs: 100, // short cleanup for testing
+			cleanupInterval: 100, // short cleanup for testing
 		});
 	});
 
@@ -65,11 +66,11 @@ describe("RateLimiter", () => {
 
 	test("should purge expired entries after cleanup interval", async () => {
 		limiter.check("/api/clean", "userX");
-		expect(limiter.store.size).toBe(1);
+		expect(limiter.getSize()).toBe(1);
 
 		await new Promise((res) => setTimeout(res, 1100)); // wait for window to expire
 
 		await new Promise((res) => setTimeout(res, 150)); // wait for cleanup to run
-		expect(limiter.store.size).toBe(0);
+		expect(limiter.getSize()).toBe(0);
 	});
 });

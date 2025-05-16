@@ -1,61 +1,56 @@
 /**
  * The result of a rate limit check.
  */
-export type RateLimitResult = {
+export interface RateLimitResult {
 	/**
 	 * Indicates whether the identifier has exceeded the rate limit.
 	 */
-	limited: boolean;
+	readonly limited: boolean;
 	/**
 	 * Number of remaining allowed requests within the current window.
 	 */
-	remaining: number;
+	readonly remaining: number;
 	/**
 	 * Timestamp (in milliseconds since epoch) when the rate limit window resets.
 	 */
-	reset: number;
-};
+	readonly reset: number;
+	/**
+	 * Current count of requests in the window.
+	 */
+	readonly current: number;
+	/**
+	 * Maximum allowed requests in the window.
+	 */
+	readonly limit: number;
+	/**
+	 * The rate limit window duration in milliseconds.
+	 */
+	readonly window: number;
+}
 /**
  * Configuration options for the rate limiter.
  */
-export type RateLimitConfig = {
+export interface RateLimitConfig {
 	/**
 	 * Duration of the rate limit window in milliseconds.
-	 * Example: 60_000 for 1 minute.
+	 * @default 60000 (1 minute)
 	 */
-	windowMs: number;
+	readonly window: number;
 	/**
 	 * Maximum number of requests allowed per window.
+	 * @default 60
 	 */
-	max: number;
-};
-/**
- * A unique key used to identify a specific rate limit bucket.
- * Typically a combination of endpoint and identifier (e.g. IP or username).
- */
-export type StoreKey = string;
-/**
- * An internal structure representing a tracked request entry.
- */
-export interface Entry {
-	/**
-	 * Number of requests made in the current window.
-	 */
-	count: number;
-	/**
-	 * Timestamp (in milliseconds since epoch) when the current window resets.
-	 */
-	resetTime: number;
-}
-/**
- * Optional extended config to include cleanup interval.
- */
-export interface ExtendedRateLimitConfig extends RateLimitConfig {
+	readonly max: number;
 	/**
 	 * Interval in milliseconds to purge old rate limit entries.
-	 * Defaults to 30_000ms (30 seconds)
+	 * @default 30000 (30 seconds)
 	 */
-	cleanupIntervalMs?: number;
+	readonly cleanupInterval?: number;
+	/**
+	 * Whether to enable the cleanup interval.
+	 * @default true
+	 */
+	readonly enableCleanup?: boolean;
 }
 /**
  * A simple in-memory rate limiter.
@@ -66,27 +61,74 @@ export interface ExtendedRateLimitConfig extends RateLimitConfig {
 export declare class RateLimiter {
 	/**
 	 * Internal store for tracking request entries.
-	 * The key is a string composed of endpoint + identifier.
 	 */
-	store: Map<StoreKey, Entry>;
+	private readonly store;
 	/**
 	 * The active configuration for this rate limiter instance.
 	 */
-	config: RateLimitConfig;
+	private readonly config;
+	/**
+	 * Timer for periodic cleanup of expired entries.
+	 */
+	private cleanupInterval?;
 	/**
 	 * Creates a new rate limiter instance.
 	 *
 	 * @param config Optional custom configuration (max requests, window duration, cleanup interval)
 	 */
-	constructor(config?: Partial<ExtendedRateLimitConfig>);
+	constructor(config?: Partial<RateLimitConfig>);
+	/**
+	 * Sets up the periodic cleanup of expired entries.
+	 * @param intervalMs Cleanup interval in milliseconds
+	 */
+	private setupCleanupInterval;
+	/**
+	 * Cleans up expired entries from the store.
+	 */
+	private cleanupExpiredEntries;
+	/**
+	 * Creates a new rate limit entry.
+	 * @param now Current timestamp in milliseconds
+	 * @returns A new rate limit entry
+	 */
+	private createNewEntry;
 	/**
 	 * Check if a given `identifier` is rate-limited for a specific `endpoint`.
 	 *
 	 * @param endpoint The API endpoint being accessed (e.g., "/api/login").
 	 * @param identifier A unique string representing the caller (e.g., IP or user ID).
-	 * @returns Object containing whether the identifier is rate limited, how many requests remain, and when the window resets.
+	 * @returns Object containing rate limit information
 	 */
 	check(endpoint: string, identifier: string): RateLimitResult;
+	/**
+	 * Generates a store key from endpoint and identifier.
+	 * @param endpoint The API endpoint
+	 * @param identifier The caller identifier
+	 * @returns The generated store key
+	 */
+	private generateKey;
+	/**
+	 * Gets an existing entry or creates a new one if it doesn't exist or is expired.
+	 * @param key The store key
+	 * @param now Current timestamp in milliseconds
+	 * @returns The entry
+	 */
+	private getOrCreateEntry;
+	/**
+	 * Creates a rate limit result object.
+	 * @param entry The current entry
+	 * @returns The rate limit result
+	 */
+	private createRateLimitResult;
+	/**
+	 * Clears the rate limiter store and stops the cleanup interval.
+	 */
+	clear(): void;
+	/**
+	 * Gets the current size of the store (number of tracked keys).
+	 * @returns The number of entries in the store
+	 */
+	getSize(): number;
 }
 
 export {};

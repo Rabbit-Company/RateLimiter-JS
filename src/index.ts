@@ -1,11 +1,13 @@
-import type { Entry, ExtendedRateLimitConfig, RateLimitConfig, RateLimitResult, StoreKey } from "./types";
+import type { Entry, RateLimitConfig, RateLimitResult, StoreKey } from "./types";
 
 /**
  * Default configuration: 60 requests per 60 seconds.
  */
-const defaultConfig: RateLimitConfig = {
-	windowMs: 60 * 1000,
+const DEFAULT_CONFIG: Readonly<RateLimitConfig> = {
+	window: 60_000,
 	max: 60,
+	enableCleanup: true,
+	cleanupInterval: 30_000,
 };
 
 /**
@@ -17,33 +19,64 @@ const defaultConfig: RateLimitConfig = {
 export class RateLimiter {
 	/**
 	 * Internal store for tracking request entries.
-	 * The key is a string composed of endpoint + identifier.
 	 */
-	store: Map<StoreKey, Entry> = new Map();
+	private readonly store: Map<StoreKey, Entry> = new Map();
 
 	/**
 	 * The active configuration for this rate limiter instance.
 	 */
-	config: RateLimitConfig;
+	private readonly config: Readonly<RateLimitConfig>;
+
+	/**
+	 * Timer for periodic cleanup of expired entries.
+	 */
+	private cleanupInterval?: NodeJS.Timeout;
 
 	/**
 	 * Creates a new rate limiter instance.
 	 *
 	 * @param config Optional custom configuration (max requests, window duration, cleanup interval)
 	 */
-	constructor(config?: Partial<ExtendedRateLimitConfig>) {
-		this.config = { ...defaultConfig, ...config };
+	constructor(config: Partial<RateLimitConfig> = {}) {
+		this.config = { ...DEFAULT_CONFIG, ...config };
 
-		const cleanupInterval = config?.cleanupIntervalMs ?? 30_000;
+		if (this.config.enableCleanup) {
+			this.setupCleanupInterval(this.config.cleanupInterval || 30_000);
+		}
+	}
 
-		setInterval(() => {
-			const now = Date.now();
-			for (const [key, entry] of this.store.entries()) {
-				if (entry.resetTime < now) {
-					this.store.delete(key);
-				}
+	/**
+	 * Sets up the periodic cleanup of expired entries.
+	 * @param intervalMs Cleanup interval in milliseconds
+	 */
+	private setupCleanupInterval(intervalMs: number): void {
+		this.cleanupInterval = setInterval(() => {
+			this.cleanupExpiredEntries();
+		}, intervalMs).unref?.();
+	}
+
+	/**
+	 * Cleans up expired entries from the store.
+	 */
+	private cleanupExpiredEntries(): void {
+		const now = Date.now();
+		for (const [key, entry] of this.store.entries()) {
+			if (entry.resetTime <= now) {
+				this.store.delete(key);
 			}
-		}, cleanupInterval).unref();
+		}
+	}
+
+	/**
+	 * Creates a new rate limit entry.
+	 * @param now Current timestamp in milliseconds
+	 * @returns A new rate limit entry
+	 */
+	private createNewEntry(now: number): Entry {
+		return {
+			count: 0,
+			resetTime: now + this.config.window,
+		};
 	}
 
 	/**
@@ -51,24 +84,49 @@ export class RateLimiter {
 	 *
 	 * @param endpoint The API endpoint being accessed (e.g., "/api/login").
 	 * @param identifier A unique string representing the caller (e.g., IP or user ID).
-	 * @returns Object containing whether the identifier is rate limited, how many requests remain, and when the window resets.
+	 * @returns Object containing rate limit information
 	 */
-	check(endpoint: string, identifier: string): RateLimitResult {
+	public check(endpoint: string, identifier: string): RateLimitResult {
 		const now = Date.now();
-		const key = `${endpoint}:${identifier}`;
-		let entry = this.store.get(key);
+		const key = this.generateKey(endpoint, identifier);
+		const entry = this.getOrCreateEntry(key, now);
 
-		if (!entry || entry.resetTime < now) {
-			entry = {
-				count: 1,
-				resetTime: now + this.config.windowMs,
-			};
-		} else {
-			entry.count += 1;
-		}
-
+		entry.count += 1;
 		this.store.set(key, entry);
 
+		return this.createRateLimitResult(entry);
+	}
+
+	/**
+	 * Generates a store key from endpoint and identifier.
+	 * @param endpoint The API endpoint
+	 * @param identifier The caller identifier
+	 * @returns The generated store key
+	 */
+	private generateKey(endpoint: string, identifier: string): StoreKey {
+		return `${endpoint}:${identifier}`;
+	}
+
+	/**
+	 * Gets an existing entry or creates a new one if it doesn't exist or is expired.
+	 * @param key The store key
+	 * @param now Current timestamp in milliseconds
+	 * @returns The entry
+	 */
+	private getOrCreateEntry(key: StoreKey, now: number): Entry {
+		const existingEntry = this.store.get(key);
+		if (!existingEntry || existingEntry.resetTime <= now) {
+			return this.createNewEntry(now);
+		}
+		return { ...existingEntry };
+	}
+
+	/**
+	 * Creates a rate limit result object.
+	 * @param entry The current entry
+	 * @returns The rate limit result
+	 */
+	private createRateLimitResult(entry: Entry): RateLimitResult {
 		const limited = entry.count > this.config.max;
 		const remaining = Math.max(this.config.max - entry.count, 0);
 
@@ -76,8 +134,30 @@ export class RateLimiter {
 			limited,
 			remaining,
 			reset: entry.resetTime,
+			current: entry.count,
+			limit: this.config.max,
+			window: this.config.window,
 		};
+	}
+
+	/**
+	 * Clears the rate limiter store and stops the cleanup interval.
+	 */
+	public clear(): void {
+		this.store.clear();
+		if (this.cleanupInterval) {
+			clearInterval(this.cleanupInterval);
+			this.cleanupInterval = undefined;
+		}
+	}
+
+	/**
+	 * Gets the current size of the store (number of tracked keys).
+	 * @returns The number of entries in the store
+	 */
+	public getSize(): number {
+		return this.store.size;
 	}
 }
 
-export type { RateLimitConfig, ExtendedRateLimitConfig, RateLimitResult };
+export type { RateLimitConfig, RateLimitResult };
