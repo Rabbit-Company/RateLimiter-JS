@@ -37,15 +37,27 @@ describe("RateLimiter", () => {
 			expect(limiter.get("/api", "user1").current).toBe(2);
 		});
 
-		test("should calculate sliding window expiration correctly", async () => {
-			limiter.check("/api", "user2");
-			await new Promise((resolve) => setTimeout(resolve, 600));
+		test("should calculate sliding window expiration correctly", () => {
+			// First request at time 0
+			const firstCheck = limiter.check("/api", "user2");
+			expect(firstCheck.remaining).toBe(4);
+			expect(firstCheck.current).toBe(1);
 
+			// Wait 600ms (within the 1000ms window)
+			Bun.sleepSync(600);
+
+			// Should still see the first request counting against the limit
 			const status = limiter.get("/api", "user2");
-			expect(status.remaining).toBe(4); // Shouldn't have expired yet
+			expect(status.remaining).toBe(4);
+			expect(status.current).toBe(1);
 
-			await new Promise((resolve) => setTimeout(resolve, 500));
-			expect(limiter.get("/api", "user2").remaining).toBe(5); // Now expired
+			// Wait another 500ms (total 1100ms - past window expiration)
+			Bun.sleepSync(500);
+
+			// Window should have expired, count reset
+			const expiredStatus = limiter.get("/api", "user2");
+			expect(expiredStatus.remaining).toBe(5);
+			expect(expiredStatus.current).toBe(0);
 		});
 	});
 
@@ -135,7 +147,7 @@ describe("RateLimiter", () => {
 			});
 		});
 
-		test("should reset count after window expires", async () => {
+		test("should reset count after window expires", () => {
 			// Exhaust the limit
 			limiter.check("/api", "user2");
 			limiter.check("/api", "user2");
@@ -144,7 +156,7 @@ describe("RateLimiter", () => {
 			expect(limiter.check("/api", "user2").limited).toBeTrue();
 
 			// Wait for window to expire
-			await new Promise((resolve) => setTimeout(resolve, 1100));
+			Bun.sleepSync(1100);
 
 			// Should allow new requests
 			const result = limiter.check("/api", "user2");
@@ -209,11 +221,11 @@ describe("RateLimiter", () => {
 			});
 		});
 
-		test("should expire old buckets and allow new requests", async () => {
+		test("should expire old buckets and allow new requests", () => {
 			limiter.check("/api", "user3");
 			limiter.check("/api", "user3");
 
-			await new Promise((resolve) => setTimeout(resolve, 1000));
+			Bun.sleepSync(1000);
 
 			// Make 4 more requests (2+4=6 would exceed limit if not for expiration)
 			for (let i = 0; i < 4; i++) {
@@ -228,7 +240,7 @@ describe("RateLimiter", () => {
 			});
 		});
 
-		test("should handle rapid bursts within precision windows", async () => {
+		test("should handle rapid bursts within precision windows", () => {
 			// Make 100 requests within the same 100ms precision window
 			for (let i = 0; i < 100; i++) {
 				limiter.check("/api", "user4");
@@ -242,7 +254,7 @@ describe("RateLimiter", () => {
 			});
 
 			// Wait for window to expire
-			await new Promise((resolve) => setTimeout(resolve, 1100));
+			Bun.sleepSync(1100);
 
 			const newResult = limiter.check("/api", "user4");
 			expect(newResult).toMatchObject({
@@ -282,7 +294,7 @@ describe("RateLimiter", () => {
 			}
 		});
 
-		test("should properly refill tokens", async () => {
+		test("should properly refill tokens", () => {
 			// Exhaust tokens
 			limiter.check("/api", "user2");
 			limiter.check("/api", "user2");
@@ -291,7 +303,7 @@ describe("RateLimiter", () => {
 			expect(limiter.check("/api", "user2").limited).toBeTrue();
 
 			// Wait for refill (600ms > 500ms interval)
-			await new Promise((resolve) => setTimeout(resolve, 600));
+			Bun.sleepSync(600);
 
 			// Should have 1 token available
 			const result = limiter.check("/api", "user2");
@@ -328,11 +340,11 @@ describe("RateLimiter", () => {
 			expect(limiter.getSize()).toBe(1);
 
 			// Wait for expiration and cleanup
-			await new Promise((resolve) => setTimeout(resolve, 150));
+			await Bun.sleep(150);
 			expect(limiter.getSize()).toBe(0);
 		});
 
-		test("should work with disabled cleanup", async () => {
+		test("should work with disabled cleanup", () => {
 			const limiter = new RateLimiter({
 				max: 2,
 				window: 100,
@@ -340,7 +352,7 @@ describe("RateLimiter", () => {
 			});
 
 			limiter.check("/api", "user1");
-			await new Promise((resolve) => setTimeout(resolve, 150));
+			Bun.sleepSync(150);
 
 			// Entry still exists but should be expired
 			expect(limiter.getSize()).toBe(1);
