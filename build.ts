@@ -19,6 +19,7 @@ let moduleBuild = await Bun.build({
 if (moduleBuild.success) {
 	await fs.rename("./module/index.js", "./module/rate-limiter.js");
 	await fs.rename("./module/index.d.ts", "./module/rate-limiter.d.ts");
+	await fs.cp("./module/rate-limiter.js", "./examples/website/rate-limiter.js");
 	logger.info("Bulding module complete");
 } else {
 	logger.error("Bulding module failed");

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Rate Limiter</title>
+		<style>
+			body {
+				font-family: Arial, sans-serif;
+				max-width: 800px;
+				margin: 0 auto;
+				padding: 20px;
+			}
+			.container {
+				display: flex;
+				flex-direction: column;
+				gap: 20px;
+			}
+			.controls {
+				display: flex;
+				gap: 10px;
+				flex-wrap: wrap;
+			}
+			button {
+				padding: 8px 16px;
+				cursor: pointer;
+			}
+			.algorithm-selector {
+				margin-bottom: 20px;
+			}
+			.results {
+				display: flex;
+				gap: 20px;
+				flex-wrap: wrap;
+			}
+			.algorithm-result {
+				border: 1px solid #ddd;
+				padding: 15px;
+				border-radius: 5px;
+				flex: 1;
+				min-width: 200px;
+			}
+			.status {
+				margin-top: 10px;
+				padding: 10px;
+				border-radius: 5px;
+			}
+			.limited {
+				background-color: #ffdddd;
+				color: #d32f2f;
+			}
+			.allowed {
+				background-color: #ddffdd;
+				color: #388e3c;
+			}
+			.log {
+				margin-top: 20px;
+				max-height: 300px;
+				overflow-y: auto;
+				border: 1px solid #ddd;
+				padding: 10px;
+				font-family: monospace;
+			}
+			.log-entry {
+				margin-bottom: 5px;
+			}
+			.config-section {
+				margin-bottom: 20px;
+				padding: 15px;
+				background-color: #f5f5f5;
+				border-radius: 5px;
+			}
+			.config-row {
+				display: flex;
+				gap: 10px;
+				margin-bottom: 10px;
+				align-items: center;
+			}
+			.config-row label {
+				min-width: 150px;
+			}
+			input {
+				padding: 5px;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>
+			<a href="https://github.com/Rabbit-Company/RateLimiter-JS" target="_blank">Rate Limiter</a> (<a
+				href="https://www.npmjs.com/package/@rabbit-company/rate-limiter"
+				target="_blank"
+				>NPM</a
+			>
+			/ <a href="https://jsr.io/@rabbit-company/rate-limiter" target="_blank">JSR</a>)
+		</h1>
+
+		<div class="container">
+			<div class="config-section">
+				<h2>Configuration</h2>
+				<div class="config-row">
+					<label for="algorithm">Algorithm:</label>
+					<select id="algorithm">
+						<option value="FIXED_WINDOW">Fixed Window</option>
+						<option value="SLIDING_WINDOW">Sliding Window</option>
+						<option value="TOKEN_BUCKET">Token Bucket</option>
+					</select>
+				</div>
+
+				<div class="config-row">
+					<label for="maxRequests">Max Requests:</label>
+					<input type="number" id="maxRequests" value="10" min="1" />
+				</div>
+
+				<div class="config-row">
+					<label for="windowSize">Window Size (ms):</label>
+					<input type="number" id="windowSize" value="10000" min="100" />
+				</div>
+
+				<div class="config-row" id="refillRateRow" style="display: none">
+					<label for="refillRate">Refill Rate:</label>
+					<input type="number" id="refillRate" value="1" min="1" />
+				</div>
+
+				<div class="config-row" id="refillIntervalRow" style="display: none">
+					<label for="refillInterval">Refill Interval (ms):</label>
+					<input type="number" id="refillInterval" value="1000" min="100" />
+				</div>
+
+				<div class="config-row" id="precisionRow" style="display: none">
+					<label for="precision">Precision (ms):</label>
+					<input type="number" id="precision" value="100" min="10" />
+				</div>
+			</div>
+
+			<div class="controls">
+				<button id="singleRequest">Make Single Request</button>
+				<button id="burstRequests">Make Burst Requests</button>
+				<button id="autoRequests">Auto Requests (1/sec)</button>
+				<button id="resetAll">Reset All</button>
+			</div>
+
+			<div class="results">
+				<div class="algorithm-result" id="fixedWindowResult">
+					<h3>Fixed Window</h3>
+					<div id="fixedWindowStatus" class="status"></div>
+				</div>
+				<div class="algorithm-result" id="slidingWindowResult">
+					<h3>Sliding Window</h3>
+					<div id="slidingWindowStatus" class="status"></div>
+				</div>
+				<div class="algorithm-result" id="tokenBucketResult">
+					<h3>Token Bucket</h3>
+					<div id="tokenBucketStatus" class="status"></div>
+				</div>
+			</div>
+
+			<div class="log" id="requestLog">
+				<h3>Request Log</h3>
+			</div>
+		</div>
+
+		<script src="app.js" type="module"></script>
+	</body>
+</html>
