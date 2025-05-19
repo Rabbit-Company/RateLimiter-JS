@@ -3,13 +3,11 @@
   "workspaces": {
     "": {
       "name": "@rabbit-company/rate-limiter",
-      "dependencies": {
-        "hono": "^4.7.9",
-      },
       "devDependencies": {
-        "@rabbit-company/logger": "5.3.0",
+        "@rabbit-company/logger": "5.4.0",
         "@types/bun": "latest",
         "bun-plugin-dts": "^0.3.0",
+        "hono": "^4.7.10",
       },
       "peerDependencies": {
         "typescript": "^5.5.4",
@@ -17,7 +15,7 @@
     },
   },
   "packages": {
-    "@rabbit-company/logger": ["@rabbit-company/logger@5.3.0", "", { "peerDependencies": { "typescript": "^5.5.4" } }, "sha512-N3OoMirGFcLRhevRSq7JOraQg13U1lOEf2rKY3YCTqL04ko8APP4nj7yw2tVNCL9IMd+NEgurK6tf3IJusHcvQ=="],
+    "@rabbit-company/logger": ["@rabbit-company/logger@5.4.0", "", { "peerDependencies": { "typescript": "^5.5.4" } }, "sha512-NPqTzKf7KylHIHZVDFgXTYYBmw3HaOuQNF/mAph0g5vxldpo4BvuiYjSskTpuZbsz9xj4ItswKaGQsY5a7UTzA=="],
 
     "@types/bun": ["@types/bun@1.2.13", "", { "dependencies": { "bun-types": "1.2.13" } }, "sha512-u6vXep/i9VBxoJl3GjZsl/BFIsvML8DfVDO0RYLEwtSZSp981kEO1V5NwRcO1CPJ7AmvpbnDCiMKo3JvbDEjAg=="],
 
@@ -49,7 +47,7 @@
 
     "get-tsconfig": ["get-tsconfig@4.10.0", "", { "dependencies": { "resolve-pkg-maps": "^1.0.0" } }, "sha512-kGzZ3LWWQcGIAmg6iWvXn0ei6WDtV26wzHRMwDSzmAbcXrTEXxHy6IehI6/4eT6VRKyMP1eF1VqwrVUmE/LR7A=="],
 
-    "hono": ["hono@4.7.9", "", {}, "sha512-/EsCoR5h7N4yu01TDu9GMCCJa6ZLk5ZJIWFFGNawAXmd1Tp53+Wir4xm0D2X19bbykWUlzQG0+BvPAji6p9E8Q=="],
+    "hono": ["hono@4.7.10", "", {}, "sha512-QkACju9MiN59CKSY5JsGZCYmPZkA6sIW6OFCUp7qDjZu6S6KHtJHhAc9Uy9mV9F8PJ1/HQ3ybZF2yjCa/73fvQ=="],
 
     "is-fullwidth-code-point": ["is-fullwidth-code-point@3.0.0", "", {}, "sha512-zymm5+u+sCsSWyD9qNaejV3DFvhCKclKdizYaJUuHA83RLjb7nSuGnddCHGv0hk+KY7BMAlsWeK4Ueg6EV6XQg=="],
 

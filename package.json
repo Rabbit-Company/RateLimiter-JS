@@ -1,6 +1,6 @@
 {
 	"name": "@rabbit-company/rate-limiter",
-	"version": "2.0.0",
+	"version": "3.0.0",
 	"description": "Simple rate limiter",
 	"main": "./module/rate-limiter.js",
 	"type": "module",
@@ -34,10 +34,10 @@
 		"security"
 	],
 	"devDependencies": {
-		"@rabbit-company/logger": "5.3.0",
+		"@rabbit-company/logger": "5.4.0",
 		"@types/bun": "latest",
 		"bun-plugin-dts": "^0.3.0",
-		"hono": "^4.7.9"
+		"hono": "^4.7.10"
 	},
 	"peerDependencies": {
 		"typescript": "^5.5.4"
