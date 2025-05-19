@@ -4,17 +4,23 @@
 [![JSR Version](https://jsr.io/badges/@rabbit-company/rate-limiter)](https://jsr.io/@rabbit-company/rate-limiter)
 [![License](https://img.shields.io/npm/l/@rabbit-company/rate-limiter)](LICENSE)
 
-A simple yet powerful in-memory rate limiter for Node.js and browser environments with first-class TypeScript support.
+A powerful in-memory rate limiter for Node.js and browser environments with multiple algorithm support and TypeScript integration.
 
 ## Features ✨
 
-- 🚦 Track request counts per endpoint and identifier (IP, user ID, etc.)
-- ⚙️ Configurable window duration and maximum request limits
-- 📊 Returns detailed rate limit information including current usage
+- 🚦 Three rate limiting algorithms:
+  - Fixed Window (simple counter)
+  - Sliding Window (precise tracking)
+  - Token Bucket (burst handling)
+- ⚙️ Highly configurable with sensible defaults
+- 📊 Detailed rate limit information including:
+  - Current request count
+  - Remaining requests
+  - Reset timestamp
+  - Window duration
 - 🧹 Automatic cleanup of expired entries
 - 🪶 Lightweight and dependency-free
 - 🛠️ Full TypeScript definitions included
-- 📡 Optional rate limit headers for API responses
 
 ## Installation 📦
 
@@ -54,7 +60,43 @@ if (result.limited) {
 
 ## Advanced Usage 🔥
 
-Here's how to integrate with a web server and add standard rate limit headers:
+### Sliding Window Example
+
+```js
+const slidingLimiter = new RateLimiter({
+	algorithm: Algorithm.SLIDING_WINDOW,
+	max: 50, // 50 requests
+	window: 30 * 1000, // per 30 seconds
+	precision: 50, // 50ms tracking precision
+});
+
+const status = slidingLimiter.check("/api/data", "user123");
+if (!status.limited) {
+	// Safe to make request
+} else {
+	// Wait until status.reset
+}
+```
+
+### Token Bucket Example
+
+```js
+const tokenLimiter = new RateLimiter({
+	algorithm: Algorithm.TOKEN_BUCKET,
+	max: 10, // Bucket capacity
+	refillRate: 2, // Tokens added per interval
+	refillInterval: 1000, // Refill interval in ms
+});
+
+const status = tokenLimiter.check("/api/data", "user123");
+if (!status.limited) {
+	// Safe to make request
+} else {
+	// Wait until status.reset
+}
+```
+
+### Web Server Integration
 
 ```js
 import { Hono } from "hono";
@@ -113,6 +155,78 @@ limiter.clear();
 
 // Get current number of tracked rate limit entries
 const activeLimits = limiter.getSize();
+```
+
+## Algorithm Comparison 🤔
+
+1. Fixed Window (default):
+
+   - Simple counter per time window
+   - Resets completely at window end
+   - Allows bursts at window boundaries
+
+2. Sliding Window:
+
+   - Tracks exact request timestamps
+   - More precise but uses more memory
+   - Smooths bursts over the window
+
+3. Token Bucket:
+   - Allows bursts up to capacity
+   - Steady refill rate between bursts
+   - Good for smoothing traffic
+
+## API Reference 📖
+
+`RateLimiter(config?: Partial<RateLimitConfig>)`
+
+Creates a new rate limiter instance. Configuration options:
+
+```js
+interface RateLimitConfig {
+	algorithm?: Algorithm; // FIXED_WINDOW | SLIDING_WINDOW | TOKEN_BUCKET
+	window?: number; // Window duration in ms (default: 60000)
+	max?: number; // Max requests per window (default: 60)
+	cleanupInterval?: number; // Cleanup interval in ms (default: 30000)
+	enableCleanup?: boolean; // Enable automatic cleanup (default: true)
+
+	// Token Bucket specific:
+	refillRate?: number; // Tokens to add per interval (default: 1)
+	refillInterval?: number; // Refill interval in ms (default: 1000)
+
+	// Sliding Window specific:
+	precision?: number; // Tracking precision in ms (default: 100)
+}
+```
+
+### Instance Methods
+
+- `check(endpoint: string, identifier: string): RateLimitResult`
+  Checks and records a request against the rate limit.
+
+- `get(endpoint: string, identifier: string): RateLimitResult`
+  Gets current rate limit status without counting as a request.
+
+- `getEntry(endpoint: string, identifier: string): Entry | null`
+  Returns the current rate limit entry for inspection.
+
+- `getSize(): number`
+  Returns number of active rate limit entries being tracked.
+
+- `clear(): void`
+  Clears all rate limit entries and stops automatic cleanup.
+
+### RateLimitResult
+
+```js
+interface RateLimitResult {
+	limited: boolean; // Whether the request should be limited
+	remaining: number; // Remaining requests in current window
+	reset: number; // Timestamp when window resets (ms since epoch)
+	current: number; // Current request count in window
+	limit: number; // Max allowed requests
+	window: number; // Window duration in milliseconds
+}
 ```
 
 ## Limitations ⚠️
